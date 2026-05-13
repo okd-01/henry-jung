@@ -1,0 +1,2480 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SUJI — 수지구 아파트 매매 시점 인텔리전스 / 2026.05.13</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Serif+KR:wght@500;700;900&display=swap" rel="stylesheet" />
+
+<style>
+/* ============================================
+   TOKENS
+   ============================================ */
+:root {
+  /* surfaces */
+  --ink: #0B0D10;
+  --ink-2: #11141A;
+  --ink-3: #181C24;
+  --paper: #ECE6D8;
+  --paper-soft: rgba(236, 230, 216, 0.88);
+  --paper-mute: rgba(236, 230, 216, 0.55);
+  --paper-fade: rgba(236, 230, 216, 0.32);
+  --line: rgba(236, 230, 216, 0.10);
+  --line-2: rgba(236, 230, 216, 0.18);
+
+  /* accents */
+  --amber: #D4A574;
+  --amber-hi: #ECC68C;
+  --rust:  #C46B4C;
+  --sage:  #7DA08C;
+  --steel: #6B8B9E;
+
+  /* type */
+  --display: "Fraunces", "Noto Serif KR", "Times New Roman", serif;
+  --display-kr: "Noto Serif KR", "Fraunces", serif;
+  --sans: "IBM Plex Sans", "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+  --sans-kr: "IBM Plex Sans KR", "IBM Plex Sans", -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+}
+
+/* ============================================
+   RESET
+   ============================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--sans-kr);
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: -0.005em;
+  overflow-x: hidden;
+  min-height: 100vh;
+  position: relative;
+}
+img, svg, canvas { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+::selection { background: var(--amber); color: var(--ink); }
+
+/* ============================================
+   ANIMATED BACKGROUND
+   ============================================ */
+.bg-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.bg-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.18;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.85  0 0 0 0 0.82  0 0 0 0 0.75  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.bg-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% 0%, transparent 0%, transparent 40%, rgba(11,13,16,0.85) 95%),
+    radial-gradient(80% 60% at 50% 100%, transparent 0%, rgba(11,13,16,0.55) 80%);
+}
+
+/* cursor halo */
+.cursor-halo {
+  position: fixed;
+  width: 420px; height: 420px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(212, 165, 116, 0.10) 0%, rgba(212, 165, 116, 0.04) 30%, transparent 70%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+body.has-cursor .cursor-halo { opacity: 1; }
+@media (hover: none) { .cursor-halo { display: none; } }
+
+/* ============================================
+   LAYOUT SHELL
+   ============================================ */
+.shell {
+  position: relative;
+  z-index: 10;
+}
+.wrap {
+  max-width: 1340px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+@media (max-width: 800px) {
+  .wrap { padding: 0 24px; }
+}
+
+/* ============================================
+   TYPE
+   ============================================ */
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.eyebrow::before {
+  content: "";
+  width: 28px; height: 1px;
+  background: var(--amber);
+  display: inline-block;
+}
+.kicker {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--paper-fade);
+  text-transform: uppercase;
+}
+.section-title {
+  font-family: var(--display-kr);
+  font-weight: 700;
+  font-size: clamp(36px, 5vw, 64px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--paper);
+}
+.section-title .italic {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 300;
+  color: var(--amber);
+  font-feature-settings: "ss01" 1;
+}
+.lead {
+  font-family: var(--display-kr);
+  font-weight: 500;
+  font-size: clamp(18px, 1.6vw, 22px);
+  line-height: 1.55;
+  color: var(--paper-soft);
+  max-width: 64ch;
+}
+
+/* ============================================
+   NAV
+   ============================================ */
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 22px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(11,13,16,0.65), transparent);
+  backdrop-filter: blur(0px);
+  transition: backdrop-filter 400ms ease, background 400ms ease;
+}
+.nav.scrolled {
+  background: rgba(11,13,16,0.85);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--line);
+}
+.nav > * { pointer-events: auto; }
+.nav-mark {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.nav-mark .dot {
+  width: 6px; height: 6px;
+  background: var(--amber);
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+.nav-links {
+  display: flex;
+  gap: 36px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+}
+.nav-links a {
+  position: relative;
+  padding: 4px 0;
+  transition: color 220ms ease;
+}
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: -2px;
+  width: 0; height: 1px;
+  background: var(--amber);
+  transition: width 320ms cubic-bezier(.7,.1,.2,1);
+}
+.nav-links a:hover { color: var(--paper); }
+.nav-links a:hover::after { width: 100%; }
+@media (max-width: 800px) {
+  .nav { padding: 18px 24px; }
+  .nav-links { display: none; }
+}
+
+/* ============================================
+   HERO
+   ============================================ */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  padding-top: 140px;
+  padding-bottom: 80px;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 9fr) minmax(0, 3fr);
+  gap: 80px;
+  align-items: end;
+}
+@media (max-width: 1000px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+}
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 40px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+}
+.hero-meta .sep {
+  width: 36px; height: 1px;
+  background: var(--paper-fade);
+}
+.hero-title {
+  font-family: var(--display-kr);
+  font-weight: 700;
+  font-size: clamp(48px, 9vw, 144px);
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+  color: var(--paper);
+}
+.hero-title .row {
+  display: block;
+  overflow: hidden;
+}
+.hero-title .reveal-text {
+  display: inline-block;
+  transform: translateY(110%);
+  transition: transform 1100ms cubic-bezier(.7,.05,.15,1);
+}
+.loaded .hero-title .reveal-text { transform: translateY(0); }
+.hero-title .row:nth-child(1) .reveal-text { transition-delay: 200ms; }
+.hero-title .row:nth-child(2) .reveal-text { transition-delay: 320ms; }
+.hero-title .row:nth-child(3) .reveal-text { transition-delay: 440ms; }
+.hero-title .em {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 300;
+  color: var(--amber);
+  font-feature-settings: "ss01" 1, "swsh" 1;
+}
+.hero-aside {
+  border-left: 1px solid var(--line-2);
+  padding-left: 28px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--paper-soft);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 900ms ease 1000ms, transform 900ms ease 1000ms;
+}
+.loaded .hero-aside { opacity: 1; transform: translateY(0); }
+.hero-aside .stat-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--amber);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 14px;
+}
+.hero-aside .stat {
+  font-family: var(--display);
+  font-size: 56px;
+  line-height: 1;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+  color: var(--paper);
+}
+.hero-aside .stat .pct {
+  font-style: italic;
+  color: var(--sage);
+}
+
+.hero-footer {
+  margin-top: 60px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  border-top: 1px solid var(--line);
+  padding-top: 28px;
+}
+@media (max-width: 800px) {
+  .hero-footer { grid-template-columns: repeat(2, 1fr); gap: 28px; }
+}
+.hf-item .hf-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--paper-fade);
+  margin-bottom: 8px;
+}
+.hf-item .hf-value {
+  font-family: var(--display-kr);
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 1.3;
+  color: var(--paper);
+}
+.hf-item .hf-value .num {
+  font-family: var(--display);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--amber);
+}
+
+.scroll-cue {
+  position: absolute;
+  bottom: 32px;
+  right: 48px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--paper-mute);
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  writing-mode: vertical-rl;
+}
+.scroll-cue .line {
+  width: 1px; height: 60px;
+  background: linear-gradient(to bottom, var(--paper-mute), transparent);
+  animation: drip 2.4s ease-in-out infinite;
+}
+@keyframes drip {
+  0% { transform: scaleY(0); transform-origin: top; }
+  50% { transform: scaleY(1); transform-origin: top; }
+  51% { transform: scaleY(1); transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
+@media (max-width: 800px) { .scroll-cue { display: none; } }
+
+/* ============================================
+   SECTION SHELL
+   ============================================ */
+section {
+  position: relative;
+  padding: 140px 0;
+}
+.section-head {
+  display: grid;
+  grid-template-columns: 4fr 8fr;
+  gap: 80px;
+  margin-bottom: 80px;
+  align-items: end;
+}
+@media (max-width: 900px) {
+  .section-head { grid-template-columns: 1fr; gap: 28px; }
+}
+.section-head .left { display: flex; flex-direction: column; gap: 18px; }
+.section-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--paper-fade);
+}
+
+/* fade-in on scroll */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 1000ms cubic-bezier(.2,.6,.2,1), transform 1000ms cubic-bezier(.2,.6,.2,1);
+}
+.reveal.in { opacity: 1; transform: translateY(0); }
+.reveal.d-1 { transition-delay: 80ms; }
+.reveal.d-2 { transition-delay: 160ms; }
+.reveal.d-3 { transition-delay: 240ms; }
+.reveal.d-4 { transition-delay: 320ms; }
+
+/* ============================================
+   STATE — VERDICT
+   ============================================ */
+#state {
+  padding-top: 120px;
+}
+.verdict {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 80px;
+  align-items: start;
+}
+@media (max-width: 1000px) { .verdict { grid-template-columns: 1fr; gap: 48px; } }
+
+.verdict-line {
+  font-family: var(--display-kr);
+  font-weight: 500;
+  font-size: clamp(28px, 3.2vw, 40px);
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: var(--paper);
+}
+.verdict-line .h {
+  background: linear-gradient(120deg, var(--amber) 0%, var(--amber-hi) 50%, var(--amber) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 400;
+}
+.verdict-line .strike-up {
+  position: relative;
+  color: var(--sage);
+}
+.verdict-line .strike-down {
+  position: relative;
+  color: var(--rust);
+}
+
+.verdict-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+.vcard {
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(236,230,216,0.02), rgba(236,230,216,0.005));
+  padding: 26px 28px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 24px;
+  align-items: center;
+  transition: border-color 320ms ease, background 320ms ease, transform 320ms ease;
+}
+.vcard:hover {
+  border-color: var(--line-2);
+  background: linear-gradient(180deg, rgba(236,230,216,0.04), rgba(236,230,216,0.01));
+  transform: translateX(4px);
+}
+.vcard .role {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--paper-fade);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  border-left: 1px solid var(--line);
+  padding-left: 8px;
+}
+.vcard .title {
+  font-family: var(--display-kr);
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--paper);
+  margin-bottom: 4px;
+}
+.vcard .sub {
+  font-size: 13px;
+  color: var(--paper-mute);
+  line-height: 1.5;
+}
+.vcard .verdict-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.vcard.go .verdict-tag { background: rgba(125,160,140,0.16); color: var(--sage); }
+.vcard.wait .verdict-tag { background: rgba(212,165,116,0.16); color: var(--amber); }
+.vcard.hold .verdict-tag { background: rgba(107,139,158,0.18); color: var(--steel); }
+.vcard.stop .verdict-tag { background: rgba(196,107,76,0.16); color: var(--rust); }
+
+/* ============================================
+   SCENARIOS — INTERACTIVE
+   ============================================ */
+#scenarios {
+  padding-top: 80px;
+}
+.scn-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+@media (max-width: 1000px) { .scn-board { grid-template-columns: 1fr; } }
+
+.scn-card {
+  position: relative;
+  border: 1px solid var(--line);
+  padding: 36px 30px 30px;
+  min-height: 460px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 400ms ease, transform 600ms cubic-bezier(.2,.7,.2,1);
+  background: linear-gradient(165deg, rgba(236,230,216,0.025) 0%, rgba(236,230,216,0.005) 60%);
+}
+.scn-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 80% at 50% 0%, var(--scn-glow, transparent), transparent 60%);
+  opacity: 0;
+  transition: opacity 600ms ease;
+  pointer-events: none;
+}
+.scn-card[data-scn="base"]    { --scn-glow: rgba(212,165,116,0.18); --scn-accent: var(--amber); }
+.scn-card[data-scn="bull"]    { --scn-glow: rgba(125,160,140,0.18); --scn-accent: var(--sage); }
+.scn-card[data-scn="bear"]    { --scn-glow: rgba(196,107,76,0.18); --scn-accent: var(--rust); }
+.scn-card:hover,
+.scn-card.active {
+  border-color: var(--scn-accent);
+  transform: translateY(-4px);
+}
+.scn-card:hover::before,
+.scn-card.active::before { opacity: 1; }
+
+.scn-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 32px;
+}
+.scn-name {
+  font-family: var(--display-kr);
+  font-weight: 700;
+  font-size: 24px;
+  color: var(--paper);
+}
+.scn-name .en {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 300;
+  color: var(--scn-accent);
+  font-size: 18px;
+  margin-left: 10px;
+  opacity: 0.85;
+}
+.scn-prob {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--paper-mute);
+}
+
+.scn-figure {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(64px, 7vw, 96px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--scn-accent);
+  margin-bottom: 4px;
+}
+.scn-figure .small { font-size: 0.5em; opacity: 0.7; letter-spacing: 0; }
+.scn-range {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--paper-mute);
+  letter-spacing: 0.06em;
+  margin-bottom: 32px;
+}
+
+.scn-prob-bar {
+  height: 2px;
+  background: var(--line);
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+.scn-prob-bar .fill {
+  position: absolute;
+  inset: 0;
+  background: var(--scn-accent);
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform 1400ms cubic-bezier(.2,.6,.2,1) 200ms;
+}
+.scn-card.in-view .scn-prob-bar .fill { transform: scaleX(var(--p, 0.5)); }
+
+.scn-assumption {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--paper-soft);
+  margin-bottom: 28px;
+  flex: 1;
+}
+.scn-action {
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.scn-action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+}
+.scn-action-row .lbl {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-fade);
+}
+.scn-action-row .val {
+  font-family: var(--sans-kr);
+  color: var(--paper);
+  text-align: right;
+}
+
+.scn-controls {
+  margin-top: 32px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+.scn-controls .hint {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--paper-mute);
+}
+.scn-controls .toggles {
+  display: flex;
+  gap: 8px;
+}
+.scn-controls button {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  transition: all 220ms ease;
+}
+.scn-controls button:hover,
+.scn-controls button.active {
+  color: var(--ink);
+  background: var(--amber);
+  border-color: var(--amber);
+}
+
+/* ============================================
+   PRICE
+   ============================================ */
+#price { padding-top: 80px; }
+
+.price-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 64px;
+  align-items: stretch;
+}
+@media (max-width: 1000px) { .price-grid { grid-template-columns: 1fr; gap: 48px; } }
+
+.chart-wrap {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  padding: 40px;
+  position: relative;
+  min-height: 480px;
+}
+.chart-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 28px;
+}
+.chart-title {
+  font-family: var(--display-kr);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--paper);
+}
+.chart-title .sub {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--paper-fade);
+  text-transform: uppercase;
+  margin-top: 4px;
+  font-weight: 400;
+}
+.chart-legend {
+  display: flex;
+  gap: 18px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--paper-mute);
+}
+.legend-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-radius: 50%;
+}
+
+#priceChart {
+  width: 100%;
+  height: 360px;
+}
+
+.dong-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dong-item {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 20px;
+  align-items: center;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  transition: all 320ms ease;
+}
+.dong-item:hover {
+  padding-left: 12px;
+  border-bottom-color: var(--line-2);
+}
+.dong-rank {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 24px;
+  color: var(--amber);
+}
+.dong-name {
+  font-family: var(--display-kr);
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--paper);
+}
+.dong-name .ko {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--paper-fade);
+  text-transform: uppercase;
+  margin-top: 4px;
+  font-weight: 400;
+}
+.dong-price {
+  text-align: right;
+}
+.dong-price .pa {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: 28px;
+  color: var(--paper);
+  display: block;
+  line-height: 1;
+}
+.dong-price .delta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--sage);
+  letter-spacing: 0.04em;
+}
+.dong-bar {
+  position: absolute;
+  bottom: -1px; left: 0;
+  height: 1px;
+  background: var(--amber);
+  width: 0;
+  transition: width 1400ms cubic-bezier(.2,.6,.2,1);
+}
+.dong-item.in-view .dong-bar { width: var(--bar, 50%); }
+
+/* ============================================
+   FACTORS MATRIX
+   ============================================ */
+#factors { padding-top: 80px; }
+.factor-table {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--line);
+  border-collapse: collapse;
+}
+@media (max-width: 800px) { .factor-table { grid-template-columns: 1fr; } }
+
+.factor-col {
+  padding: 36px 40px;
+  position: relative;
+}
+.factor-col:first-child { border-right: 1px solid var(--line); }
+@media (max-width: 800px) {
+  .factor-col:first-child { border-right: 0; border-bottom: 1px solid var(--line); }
+}
+.factor-col-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.factor-col-head .ttl {
+  font-family: var(--display-kr);
+  font-weight: 700;
+  font-size: 22px;
+}
+.factor-col.up .factor-col-head .ttl { color: var(--sage); }
+.factor-col.down .factor-col-head .ttl { color: var(--rust); }
+.factor-col-head .arrow {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 32px;
+}
+.factor-col.up .factor-col-head .arrow { color: var(--sage); }
+.factor-col.down .factor-col-head .arrow { color: var(--rust); }
+
+.factor-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px dashed var(--line);
+  transition: padding 280ms ease;
+}
+.factor-row:hover { padding-left: 10px; }
+.factor-row:last-child { border-bottom: 0; }
+.factor-label {
+  font-size: 15px;
+  color: var(--paper);
+  line-height: 1.4;
+}
+.factor-strength {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+}
+.s-strong { background: rgba(212,165,116,0.18); color: var(--amber); }
+.s-mid { background: rgba(236,230,216,0.06); color: var(--paper-mute); }
+.s-weak { background: rgba(236,230,216,0.04); color: var(--paper-fade); }
+.factor-time {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--paper-fade);
+  letter-spacing: 0.08em;
+}
+
+/* ============================================
+   TIMELINE
+   ============================================ */
+#timeline { padding-top: 80px; }
+.tl-track {
+  position: relative;
+  padding: 80px 0 60px;
+}
+.tl-axis {
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--line-2) 10%, var(--line-2) 90%, transparent);
+}
+.tl-axis::before,
+.tl-axis::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 6px; height: 6px;
+  background: var(--paper-mute);
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+.tl-axis::before { left: 4%; }
+.tl-axis::after { right: 4%; }
+
+.tl-events {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+@media (max-width: 900px) { .tl-events { grid-template-columns: 1fr; } }
+.tl-event {
+  position: relative;
+  padding: 28px;
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  transition: all 400ms ease;
+}
+.tl-event::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 28px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 1px solid var(--amber);
+  z-index: 2;
+}
+.tl-event::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 35px;
+  width: 1px; height: 14px;
+  background: var(--amber);
+}
+.tl-event:hover {
+  border-color: var(--amber);
+  background: linear-gradient(180deg, rgba(212,165,116,0.08) 0%, var(--ink-2) 80%);
+  transform: translateY(-4px);
+}
+.tl-event:hover::before {
+  background: var(--amber);
+  box-shadow: 0 0 24px rgba(212,165,116,0.6);
+}
+.tl-date {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 16px;
+  color: var(--amber);
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+.tl-day {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--paper-fade);
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.tl-title {
+  font-family: var(--display-kr);
+  font-weight: 600;
+  font-size: 19px;
+  color: var(--paper);
+  margin-bottom: 14px;
+  line-height: 1.3;
+}
+.tl-desc {
+  font-size: 13px;
+  color: var(--paper-soft);
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+.tl-impact {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--paper-mute);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.tl-impact .imp-tag {
+  background: var(--amber);
+  color: var(--ink);
+  padding: 3px 8px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+/* ============================================
+   CHECKLIST
+   ============================================ */
+#checklist { padding-top: 80px; }
+.check-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr);
+  gap: 64px;
+  align-items: start;
+}
+@media (max-width: 1000px) { .check-grid { grid-template-columns: 1fr; gap: 32px; } }
+
+.check-summary {
+  position: sticky;
+  top: 120px;
+  padding: 32px;
+  background: linear-gradient(180deg, rgba(212,165,116,0.06), transparent 70%);
+  border: 1px solid var(--line);
+}
+.check-progress-ring {
+  width: 140px; height: 140px;
+  margin-bottom: 24px;
+  position: relative;
+}
+.check-progress-ring svg { transform: rotate(-90deg); }
+.check-progress-ring .pct {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: 40px;
+  color: var(--paper);
+  letter-spacing: -0.02em;
+}
+.check-progress-ring .pct .sign {
+  font-style: italic;
+  color: var(--amber);
+  font-size: 24px;
+  margin-left: 2px;
+}
+.check-summary-text {
+  font-family: var(--display-kr);
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--paper-soft);
+}
+.check-summary-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--paper-fade);
+  text-transform: uppercase;
+  margin-top: 16px;
+}
+
+.check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.check-group {
+  margin-bottom: 32px;
+}
+.check-group-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.check-item {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 18px;
+  align-items: start;
+  padding: 14px 0;
+  cursor: pointer;
+  user-select: none;
+  transition: padding 240ms ease;
+}
+.check-item:hover { padding-left: 8px; }
+.check-box {
+  width: 18px; height: 18px;
+  border: 1px solid var(--paper-mute);
+  position: relative;
+  margin-top: 2px;
+  transition: all 240ms ease;
+}
+.check-box::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  background: var(--amber);
+  transform: scale(0);
+  transition: transform 320ms cubic-bezier(.8,0,.2,1.4);
+}
+.check-item.checked .check-box {
+  border-color: var(--amber);
+}
+.check-item.checked .check-box::after { transform: scale(1); }
+.check-text {
+  font-family: var(--sans-kr);
+  font-size: 15px;
+  color: var(--paper);
+  line-height: 1.5;
+  transition: color 240ms ease;
+}
+.check-item.checked .check-text {
+  color: var(--paper-mute);
+  text-decoration: line-through;
+  text-decoration-color: var(--paper-fade);
+  text-decoration-thickness: 1px;
+}
+.check-meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--paper-fade);
+  text-transform: uppercase;
+}
+
+/* ============================================
+   COMPLEX PRICE TABLE
+   ============================================ */
+.unit-table {
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.unit-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+  transition: background 240ms ease;
+}
+.unit-row:last-child { border-bottom: 0; }
+.unit-row.head {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper-fade);
+  background: var(--ink-2);
+}
+.unit-row.data:hover { background: rgba(212,165,116,0.04); }
+.unit-row .u-name {
+  font-family: var(--display-kr);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--paper);
+}
+.unit-row .u-name .u-dong {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--paper-fade);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-top: 2px;
+  font-weight: 400;
+}
+.unit-row .u-price {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: 22px;
+  color: var(--paper);
+  letter-spacing: -0.01em;
+}
+.unit-row .u-meta {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--paper-mute);
+}
+@media (max-width: 800px) {
+  .unit-row { grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 18px; font-size: 14px; }
+  .unit-row .u-meta.hide-m { display: none; }
+  .unit-row.head .hide-m { display: none; }
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.foot {
+  padding: 100px 0 60px;
+  border-top: 1px solid var(--line);
+  margin-top: 80px;
+}
+.foot-grid {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: 80px;
+}
+@media (max-width: 800px) { .foot-grid { grid-template-columns: 1fr; gap: 40px; } }
+.foot-mark {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(40px, 6vw, 80px);
+  line-height: 1;
+  color: var(--paper);
+  letter-spacing: -0.02em;
+}
+.foot-mark .accent { color: var(--amber); }
+.foot-disclaimer {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--paper-mute);
+}
+.foot-disclaimer p + p { margin-top: 14px; }
+.foot-meta {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--paper-fade);
+}
+@media (max-width: 600px) {
+  .foot-meta { flex-direction: column; gap: 12px; }
+}
+
+/* ============================================
+   UTILITY DETAILS
+   ============================================ */
+.flicker { animation: flicker 4.2s steps(1, end) infinite; }
+@keyframes flicker {
+  0%, 92%, 100% { opacity: 1; }
+  93% { opacity: 0.3; }
+  94% { opacity: 1; }
+  96% { opacity: 0.6; }
+  97% { opacity: 1; }
+}
+
+.deco-corner {
+  position: absolute;
+  width: 10px; height: 10px;
+  border: 1px solid var(--paper-fade);
+}
+.deco-corner.tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.deco-corner.tr { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.deco-corner.bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.deco-corner.br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+
+.fig-marker {
+  position: absolute;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--paper-fade);
+  text-transform: uppercase;
+}
+.fig-marker.tl { top: 14px; left: 14px; }
+.fig-marker.tr { top: 14px; right: 14px; }
+</style>
+</head>
+<body>
+
+<!-- ============================================
+     BACKGROUND
+     ============================================ -->
+<canvas class="bg-canvas" id="bgCanvas"></canvas>
+<div class="bg-grain"></div>
+<div class="bg-vignette"></div>
+<div class="cursor-halo" id="cursorHalo"></div>
+
+<!-- ============================================
+     NAV
+     ============================================ -->
+<nav class="nav" id="nav">
+  <div class="nav-mark">
+    Suji<span class="dot"></span><span style="font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; color: var(--paper-mute);">/ MAY 2026</span>
+  </div>
+  <div class="nav-links">
+    <a href="#state">01 · 국면</a>
+    <a href="#scenarios">02 · 시나리오</a>
+    <a href="#price">03 · 가격</a>
+    <a href="#factors">04 · 환경</a>
+    <a href="#timeline">05 · 트리거</a>
+    <a href="#checklist">06 · 체크리스트</a>
+  </div>
+</nav>
+
+<div class="shell">
+
+<!-- ============================================
+     HERO
+     ============================================ -->
+<header class="hero">
+  <div class="wrap">
+
+    <div class="hero-meta">
+      <span>Vol. 01 · Issue 05</span>
+      <span class="sep"></span>
+      <span class="flicker">Real-Estate Intelligence Report</span>
+      <span class="sep"></span>
+      <span>Yongin · Suji-gu</span>
+    </div>
+
+    <div class="hero-grid">
+      <h1 class="hero-title">
+        <span class="row"><span class="reveal-text">수지구의</span></span>
+        <span class="row"><span class="reveal-text"><span class="em">언제</span>를</span></span>
+        <span class="row"><span class="reveal-text">읽는다.</span></span>
+      </h1>
+
+      <aside class="hero-aside">
+        <span class="stat-tag">2025 누적 상승률</span>
+        <div class="stat"><span class="pct">+7.32</span><span style="font-family: var(--display); font-style: italic; font-weight: 300; color: var(--sage); font-size: 32px;">%</span></div>
+        <p style="margin-top: 18px;">한국부동산원 기준 2025년 1~11월 누적. 경기도 평균(+0.62%)을 12배 이상 상회하며, 경기 구(區) 단위 거래량 1위(6,966건)를 동반했다.</p>
+      </aside>
+    </div>
+
+    <div class="hero-footer">
+      <div class="hf-item">
+        <div class="hf-label">Current Phase</div>
+        <div class="hf-value">확장기 + <span class="num">비대칭</span> 균형</div>
+      </div>
+      <div class="hf-item">
+        <div class="hf-label">12-Month Base</div>
+        <div class="hf-value">+3 ~ <span class="num">+7%</span></div>
+      </div>
+      <div class="hf-item">
+        <div class="hf-label">Primary Risk</div>
+        <div class="hf-value">환율 <span class="num">1,450↑</span></div>
+      </div>
+      <div class="hf-item">
+        <div class="hf-label">Next Pivot</div>
+        <div class="hf-value">금통위 · <span class="num">05.28</span></div>
+      </div>
+    </div>
+
+    <div class="scroll-cue">
+      <span>SCROLL</span>
+      <span class="line"></span>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================
+     SECTION 01 · STATE / VERDICT
+     ============================================ -->
+<section id="state">
+  <div class="wrap">
+
+    <div class="section-head">
+      <div class="left">
+        <span class="section-num">§ 01 / 06</span>
+        <span class="eyebrow">현재 국면</span>
+      </div>
+      <h2 class="section-title reveal d-1">
+        가격은 <span class="italic">견조</span>하다.<br>
+        거래는 <span class="italic">잠겼다</span>.
+      </h2>
+    </div>
+
+    <div class="verdict">
+
+      <div class="reveal d-1">
+        <p class="verdict-line">
+          확장기 초중반의 <span class="h">펀더멘털</span>과
+          10.15 대책의 <span class="strike-down">거래 봉쇄</span>가
+          중첩된 <span class="h">비대칭 균형</span> 국면.
+          가격 추가 상승 동력은 <span class="strike-up">공급 절벽</span>과
+          <span class="strike-up">매물 잠김</span>으로 유지되나,
+          거래량은 2024년 수준으로 후퇴할 가능성이 높다.
+        </p>
+      </div>
+
+      <div class="verdict-card-grid">
+
+        <div class="vcard go reveal d-1">
+          <div class="role">A</div>
+          <div>
+            <div class="title">실거주 · 5년+ 보유</div>
+            <div class="sub">자기자본 60% + DSR 한도 확인 시 단계적 분할 진입 검토.</div>
+          </div>
+          <span class="verdict-tag">진입 검토</span>
+        </div>
+
+        <div class="vcard stop reveal d-2">
+          <div class="role">B</div>
+          <div>
+            <div class="title">투자 · 시세차익</div>
+            <div class="sub">토허 2년 실거주 + LTV 40% + 양도세 중과로 자금 효율 구조적 악화.</div>
+          </div>
+          <span class="verdict-tag">신규 비권장</span>
+        </div>
+
+        <div class="vcard hold reveal d-3">
+          <div class="role">C</div>
+          <div>
+            <div class="title">기보유 1주택</div>
+            <div class="sub">보유 지속. 갈아타기 시 매도·매수 시점의 동시성 확보.</div>
+          </div>
+          <span class="verdict-tag">보유 지속</span>
+        </div>
+
+        <div class="vcard wait reveal d-4">
+          <div class="role">D</div>
+          <div>
+            <div class="title">관망자 · 미진입</div>
+            <div class="sub">5/28 금통위 톤이 1차 진입 결정 트리거.</div>
+          </div>
+          <span class="verdict-tag">트리거 대기</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     SECTION 02 · SCENARIOS
+     ============================================ -->
+<section id="scenarios">
+  <div class="wrap">
+
+    <div class="section-head">
+      <div class="left">
+        <span class="section-num">§ 02 / 06</span>
+        <span class="eyebrow">12개월 시나리오</span>
+      </div>
+      <h2 class="section-title reveal">
+        <span class="italic">세 가지</span> 길.<br>
+        하나의 결정.
+      </h2>
+    </div>
+
+    <div class="scn-board">
+
+      <article class="scn-card reveal d-1" data-scn="base" style="--p: 0.5;">
+        <div class="scn-head">
+          <div class="scn-name">베이스<span class="en">Base</span></div>
+          <div class="scn-prob">PROBABILITY · <strong style="color: var(--amber);">50%</strong></div>
+        </div>
+        <div class="scn-figure" data-target="+5"><span class="small">⌀</span> +5<span class="small">%</span></div>
+        <div class="scn-range">+3% ~ +7% / 12M</div>
+        <div class="scn-prob-bar"><div class="fill"></div></div>
+        <p class="scn-assumption">금리 동결 또는 1회 인하. 10.15 대책 유지. 매물 잠김 지속으로 호가 위주 가격 형성.</p>
+        <div class="scn-action">
+          <div class="scn-action-row"><span class="lbl">실거주</span><span class="val">단계적 분할 진입</span></div>
+          <div class="scn-action-row"><span class="lbl">투자</span><span class="val">관망</span></div>
+          <div class="scn-action-row"><span class="lbl">진입가 · 84㎡</span><span class="val">14.5 ~ 15.0억</span></div>
+        </div>
+      </article>
+
+      <article class="scn-card reveal d-2" data-scn="bull" style="--p: 0.3;">
+        <div class="scn-head">
+          <div class="scn-name">낙관<span class="en">Bull</span></div>
+          <div class="scn-prob">PROBABILITY · <strong style="color: var(--sage);">30%</strong></div>
+        </div>
+        <div class="scn-figure" data-target="+11">+11<span class="small">%</span></div>
+        <div class="scn-range">+8% ~ +15% / 12M</div>
+        <div class="scn-prob-bar"><div class="fill"></div></div>
+        <p class="scn-assumption">금리 2회+ 인하 + 종부세·취득세 완화 입법 + GTX 모멘텀 + 리모델링 본격화.</p>
+        <div class="scn-action">
+          <div class="scn-action-row"><span class="lbl">실거주</span><span class="val">조기 진입</span></div>
+          <div class="scn-action-row"><span class="lbl">투자</span><span class="val">토허 제약 잔존</span></div>
+          <div class="scn-action-row"><span class="lbl">사후 합리가</span><span class="val">현재가 즉시</span></div>
+        </div>
+      </article>
+
+      <article class="scn-card reveal d-3" data-scn="bear" style="--p: 0.2;">
+        <div class="scn-head">
+          <div class="scn-name">비관<span class="en">Bear</span></div>
+          <div class="scn-prob">PROBABILITY · <strong style="color: var(--rust);">20%</strong></div>
+        </div>
+        <div class="scn-figure" data-target="-11">−11<span class="small">%</span></div>
+        <div class="scn-range">−8% ~ −15% / 12M</div>
+        <div class="scn-prob-bar"><div class="fill"></div></div>
+        <p class="scn-assumption">환율 1,450 돌파 + 미 매파 + 가계대출 급증 + 11차 대책 + 얇은 시장 급매.</p>
+        <div class="scn-action">
+          <div class="scn-action-row"><span class="lbl">실거주</span><span class="val">현금 보유 적기</span></div>
+          <div class="scn-action-row"><span class="lbl">다주택자</span><span class="val">신속 처분 검토</span></div>
+          <div class="scn-action-row"><span class="lbl">진입가 · 84㎡</span><span class="val">12.8 ~ 13.5억</span></div>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="scn-controls">
+      <div class="hint">시나리오 카드를 클릭하면 단지별 진입가가 갱신됩니다.</div>
+      <div class="toggles" id="scnToggles">
+        <button data-target="base" class="active">베이스</button>
+        <button data-target="bull">낙관</button>
+        <button data-target="bear">비관</button>
+      </div>
+    </div>
+
+    <!-- DYNAMIC UNIT TABLE -->
+    <div style="margin-top: 56px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 20px;">
+        <h3 style="font-family: var(--display-kr); font-weight: 600; font-size: 22px;">
+          시나리오별 진입가 · <span id="scnLabel" style="font-family: var(--display); font-style: italic; font-weight: 300; color: var(--amber);">Base</span>
+        </h3>
+        <div class="kicker">단지별 / 전용 84㎡ 기준 / 만원</div>
+      </div>
+      <div class="unit-table" id="unitTable">
+        <div class="unit-row head">
+          <div>단지 · COMPLEX</div>
+          <div>현재 실거래</div>
+          <div>베이스 진입가</div>
+          <div class="hide-m">비관 진입가</div>
+          <div class="hide-m">전세가율</div>
+        </div>
+        <!-- rows injected by JS -->
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================
+     SECTION 03 · PRICE
+     ============================================ -->
+<section id="price">
+  <div class="wrap">
+
+    <div class="section-head">
+      <div class="left">
+        <span class="section-num">§ 03 / 06</span>
+        <span class="eyebrow">가격 추이</span>
+      </div>
+      <h2 class="section-title reveal">
+        평당가는 <span class="italic">37.8%</span><br>
+        경기 평균을 추월했다.
+      </h2>
+    </div>
+
+    <div class="price-grid">
+
+      <div class="chart-wrap reveal d-1">
+        <span class="fig-marker tl">Fig. 03 · A</span>
+        <span class="fig-marker tr">YoY · Volume</span>
+        <span class="deco-corner tl"></span>
+        <span class="deco-corner tr"></span>
+        <span class="deco-corner bl"></span>
+        <span class="deco-corner br"></span>
+
+        <div class="chart-head">
+          <div class="chart-title">
+            가격지수 vs 거래량 추이
+            <span class="sub">2020 — 2025 / 한국부동산원·국토부</span>
+          </div>
+          <div class="chart-legend">
+            <span><span class="legend-dot" style="background: var(--amber);"></span>지수</span>
+            <span><span class="legend-dot" style="background: var(--steel);"></span>거래량</span>
+          </div>
+        </div>
+        <canvas id="priceChart"></canvas>
+      </div>
+
+      <div class="reveal d-2">
+        <h3 style="font-family: var(--display-kr); font-weight: 600; font-size: 22px; margin-bottom: 8px;">행정동 평당가 순위</h3>
+        <p class="kicker" style="margin-bottom: 24px;">2025 · 만원/평 · 출처 집품</p>
+
+        <div class="dong-list" id="dongList">
+          <!-- injected -->
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================
+     SECTION 04 · FACTORS
+     ============================================ -->
+<section id="factors">
+  <div class="wrap">
+
+    <div class="section-head">
+      <div class="left">
+        <span class="section-num">§ 04 / 06</span>
+        <span class="eyebrow">시장 환경 매트릭스</span>
+      </div>
+      <h2 class="section-title reveal">
+        <span class="italic">상승</span>과 <span class="italic">하강</span><br>
+        같은 무대 위에서.
+      </h2>
+    </div>
+
+    <div class="factor-table reveal">
+
+      <div class="factor-col up">
+        <div class="factor-col-head">
+          <span class="ttl">상승 동력</span>
+          <span class="arrow">↑</span>
+        </div>
+
+        <div class="factor-row">
+          <span class="factor-label">공급 절벽 — 분당+수지 3년 873세대</span>
+          <span class="factor-strength s-strong">강</span>
+          <span class="factor-time">중기</span>
+        </div>
+        <div class="factor-row">
+          <span class="factor-label">학군 · 신분당선 · 판교 접근성</span>
+          <span class="factor-strength s-strong">강</span>
+          <span class="factor-time">장기</span>
+        </div>
+        <div class="factor-row">
+          <span class="factor-label">수지초입마을 1,715세대 리모델링</span>
+          <span class="factor-strength s-strong">강</span>
+          <span class="factor-time">단·중기</span>
+        </div>
+        <div class="factor-row">
+          <span class="factor-label">GTX-A 전구간 개통 (6/27)</span>
+          <span class="factor-strength s-mid">중</span>
+          <span class="factor-time">단기</span>
+        </div>
+        <div class="factor-row">
+          <span class="factor-label">금리 인하 가능성 (신현송 첫 회의)</span>
+          <span class="factor-strength s-mid">중</span>
+          <span class="factor-time">중기</span>
+        </div>
+        <div class="factor-row">
+          <span class="factor-label">종부세 · 취득세 완화 예고</span>
+          <span class="factor-strength s-weak">약</span>
+          <span class="factor-time">중기</span>
+        </div>
+      </div>
+
+      <div class="factor-col down">
+        <div class="factor-col-head">
+          <span class="ttl">억제 · 하강</span>
+          <span class="arrow">↓</span>
+        </div>
+
+        <div class="factor-row">
+          <span class="factor-label">10.15 대책 — 토허 · LTV 40% · 주담대 6억</span>
+          <span class="factor-strength s-strong">강</span>
+          <span class="factor-time">단·중기</span>
+        </div>
+        <div class="factor-row">
+          <span class="factor-label">스트레스 DSR 3단계 (한도 -1.1억)</span>
+          <span class="factor-strength s-strong">강</span>
+          <span class="factor-time">단·중기</span>
+        </div>
+        <div class="factor-row">
+          <span class="factor-label">한은 인하 가이던스 봉쇄</span>
+          <span class="factor-strength s-mid">중</span>
+          <span class="factor-time">중기</span>
+        </div>
+        <div class="factor-row">
+          <span class="factor-label">양도세 다주택 중과 재시행 (5/10)</span>
+          <span class="factor-strength s-mid">중</span>
+          <span class="factor-time">단기</span>
+        </div>
+        <div class="factor-row">
+          <span class="factor-label">전세가율 50%대 — 추가 동력 약화 시그널</span>
+          <span class="factor-strength s-weak">약</span>
+          <span class="factor-time">단기</span>
+        </div>
+        <div class="factor-row">
+          <span class="factor-label">환율 1,450 돌파 리스크</span>
+          <span class="factor-strength s-mid">중</span>
+          <span class="factor-time">단기</span>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================
+     SECTION 05 · TIMELINE
+     ============================================ -->
+<section id="timeline">
+  <div class="wrap">
+
+    <div class="section-head">
+      <div class="left">
+        <span class="section-num">§ 05 / 06</span>
+        <span class="eyebrow">변곡점 캘린더</span>
+      </div>
+      <h2 class="section-title reveal">
+        세 번의 <span class="italic">분기점</span><br>
+        — 다음 6개월.
+      </h2>
+    </div>
+
+    <div class="tl-track reveal">
+      <div class="tl-axis"></div>
+
+      <div class="tl-events">
+
+        <div class="tl-event">
+          <div class="tl-date">May · 28</div>
+          <div class="tl-day">D − 15 / 통화 정책</div>
+          <div class="tl-title">신현송 신총재 첫 금통위</div>
+          <div class="tl-desc">한은 통화정책방향 결정회의. 비둘기 톤이면 베이스→낙관 +10%p 이동. 매파면 동결 장기화로 베이스 강화.</div>
+          <div class="tl-impact">
+            <span class="imp-tag">1차 분기점</span>
+            <span>SCENARIO PIVOT</span>
+          </div>
+        </div>
+
+        <div class="tl-event">
+          <div class="tl-date">Jun · 27</div>
+          <div class="tl-day">D + 45 / 교통 인프라</div>
+          <div class="tl-title">GTX-A 전구간 개통</div>
+          <div class="tl-desc">광교·판교 환승 동선 실측 효과 확인 구간. 개통 후 4주간 호가 변동이 호재 선반영 정도를 검증한다.</div>
+          <div class="tl-impact">
+            <span class="imp-tag">검증 이벤트</span>
+            <span>PRICE-IN TEST</span>
+          </div>
+        </div>
+
+        <div class="tl-event">
+          <div class="tl-date">Oct · YYY</div>
+          <div class="tl-day">D + 150 / 정비 모멘텀</div>
+          <div class="tl-title">수지초입마을 리모델링 착공</div>
+          <div class="tl-desc">1,715세대 단지. 인근 단지 호가 +5~10% 견인 가능. 일정 지연·진행도가 중기 모멘텀의 1차 신호.</div>
+          <div class="tl-impact">
+            <span class="imp-tag">중기 신호</span>
+            <span>SUPPLY-SIDE</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================
+     SECTION 06 · CHECKLIST
+     ============================================ -->
+<section id="checklist">
+  <div class="wrap">
+
+    <div class="section-head">
+      <div class="left">
+        <span class="section-num">§ 06 / 06</span>
+        <span class="eyebrow">의사결정 체크리스트</span>
+      </div>
+      <h2 class="section-title reveal">
+        결정의 <span class="italic">조건</span>들.
+      </h2>
+    </div>
+
+    <div class="check-grid">
+
+      <div class="check-summary reveal d-1">
+        <div class="check-progress-ring">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="62" fill="none" stroke="rgba(236,230,216,0.08)" stroke-width="2"/>
+            <circle id="ringFill" cx="70" cy="70" r="62" fill="none" stroke="#D4A574" stroke-width="2" stroke-dasharray="389.5" stroke-dashoffset="389.5" stroke-linecap="round" style="transition: stroke-dashoffset 600ms ease;"/>
+          </svg>
+          <div class="pct"><span id="ringPct">0</span><span class="sign">%</span></div>
+        </div>
+        <p class="check-summary-text">
+          체크리스트는 <span style="color: var(--amber);">의사결정의 사전조건</span>입니다. 모든 항목이 충족되어야 진입 신호로 해석할 수 있습니다.
+        </p>
+        <div class="check-summary-num">
+          <span id="checkCount">0</span> / 12 ITEMS COMPLETED
+        </div>
+      </div>
+
+      <div class="check-list reveal d-2">
+
+        <div class="check-group">
+          <div class="check-group-title">자금 · CAPITAL</div>
+          <div class="check-item" data-id="c1">
+            <span class="check-box"></span>
+            <span class="check-text">매수가의 60% 이상 자기자본 확보 (LTV 40% 한도)</span>
+            <span class="check-meta">필수</span>
+          </div>
+          <div class="check-item" data-id="c2">
+            <span class="check-box"></span>
+            <span class="check-text">주담대 6억 상한 · 15억 초과 단지는 자기자본 9억+</span>
+            <span class="check-meta">필수</span>
+          </div>
+          <div class="check-item" data-id="c3">
+            <span class="check-box"></span>
+            <span class="check-text">스트레스 DSR 3단계 반영 한도 계산 완료</span>
+            <span class="check-meta">필수</span>
+          </div>
+          <div class="check-item" data-id="c4">
+            <span class="check-box"></span>
+            <span class="check-text">비상 예비금 6개월 생활비 + 보유비용 별도 확보</span>
+            <span class="check-meta">권장</span>
+          </div>
+        </div>
+
+        <div class="check-group">
+          <div class="check-group-title">전략 · STRATEGY</div>
+          <div class="check-item" data-id="s1">
+            <span class="check-box"></span>
+            <span class="check-text">보유 기간 5년+ 전제 (토허 2년 실거주 의무 이행 가능)</span>
+            <span class="check-meta">필수</span>
+          </div>
+          <div class="check-item" data-id="s2">
+            <span class="check-box"></span>
+            <span class="check-text">매수가 대비 -15% 도달 시 손절 기준 사전 설정</span>
+            <span class="check-meta">권장</span>
+          </div>
+          <div class="check-item" data-id="s3">
+            <span class="check-box"></span>
+            <span class="check-text">매수 대상 단지 3~5개 비교 (가격·입지·관리)</span>
+            <span class="check-meta">권장</span>
+          </div>
+          <div class="check-item" data-id="s4">
+            <span class="check-box"></span>
+            <span class="check-text">5년 후 양도세 시뮬레이션 (보유·거주 기간별)</span>
+            <span class="check-meta">권장</span>
+          </div>
+        </div>
+
+        <div class="check-group">
+          <div class="check-group-title">트리거 · MONITORING</div>
+          <div class="check-item" data-id="t1">
+            <span class="check-box"></span>
+            <span class="check-text">2026-05-28 금통위 결과 캘린더 등록</span>
+            <span class="check-meta">트리거</span>
+          </div>
+          <div class="check-item" data-id="t2">
+            <span class="check-box"></span>
+            <span class="check-text">2026-06-27 GTX-A 개통 후 4주 호가 변동 모니터링</span>
+            <span class="check-meta">트리거</span>
+          </div>
+          <div class="check-item" data-id="t3">
+            <span class="check-box"></span>
+            <span class="check-text">2026-10 수지초입마을 착공 전후 인근 단지 호가 추이</span>
+            <span class="check-meta">트리거</span>
+          </div>
+          <div class="check-item" data-id="t4">
+            <span class="check-box"></span>
+            <span class="check-text">매월 가계대출 잔액 · 서울 집값 주간 통계 확인</span>
+            <span class="check-meta">트리거</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================
+     FOOTER
+     ============================================ -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-mark">
+        Suji<span class="accent">.</span><br>
+        Intelligence
+      </div>
+
+      <div class="foot-disclaimer">
+        <p>본 보고서는 의사결정 보조 자료입니다. 특정 단지의 매매를 권유하지 않으며, 실제 매매는 개인의 자금·세금·가족 상황을 종합적으로 검토한 뒤 세무·금융 전문가와 상담 후 결정하시기 바랍니다.</p>
+        <p>거시·정책 외생 변수가 변동하면 본 보고서의 시나리오 확률은 재평가가 필요합니다. 모든 수치는 2026-05-13 조회 기준이며, 2026-05-28 금통위 결과 직후 갱신을 권장합니다.</p>
+        <p>데이터 출처 — 한국부동산원, 국토교통부, KB부동산, 한국은행, 금융위원회, 호갱노노, 집품, 정책브리핑 외. 조회 시점 모두 2026-05-13.</p>
+        <div class="foot-meta">
+          <span>Compiled · 2026.05.13</span>
+          <span>4 Agents · 5 Skills</span>
+          <span>© Suji Intelligence Vol. 01</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</div><!-- /.shell -->
+
+<script>
+/* ============================================
+   ANIMATED BACKGROUND — Contour / topographic
+   ============================================ */
+(function bg() {
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
+  let w, h, t = 0;
+  let mouseX = 0.5, mouseY = 0.5;
+  let targetMX = 0.5, targetMY = 0.5;
+
+  function resize() {
+    w = canvas.width = window.innerWidth * devicePixelRatio;
+    h = canvas.height = window.innerHeight * devicePixelRatio;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  window.addEventListener('mousemove', (e) => {
+    targetMX = e.clientX / window.innerWidth;
+    targetMY = e.clientY / window.innerHeight;
+  }, { passive: true });
+
+  // simple value noise
+  const grad = new Array(256);
+  for (let i = 0; i < 256; i++) grad[i] = Math.random();
+  function n2(x, y) {
+    const ix = Math.floor(x), iy = Math.floor(y);
+    const fx = x - ix, fy = y - iy;
+    const a = grad[(ix * 73 + iy * 19) & 255];
+    const b = grad[((ix + 1) * 73 + iy * 19) & 255];
+    const c = grad[(ix * 73 + (iy + 1) * 19) & 255];
+    const d = grad[((ix + 1) * 73 + (iy + 1) * 19) & 255];
+    const u = fx * fx * (3 - 2 * fx);
+    const v = fy * fy * (3 - 2 * fy);
+    return (1 - v) * ((1 - u) * a + u * b) + v * ((1 - u) * c + u * d);
+  }
+
+  function draw() {
+    t += 0.0014;
+    mouseX += (targetMX - mouseX) * 0.04;
+    mouseY += (targetMY - mouseY) * 0.04;
+
+    ctx.fillStyle = '#0B0D10';
+    ctx.fillRect(0, 0, w, h);
+
+    // Soft warm radial near top — light source
+    const grd = ctx.createRadialGradient(w * 0.5, h * -0.1, 0, w * 0.5, h * 0.4, w * 0.8);
+    grd.addColorStop(0, 'rgba(212, 165, 116, 0.10)');
+    grd.addColorStop(0.4, 'rgba(212, 165, 116, 0.04)');
+    grd.addColorStop(1, 'rgba(11, 13, 16, 0)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, w, h);
+
+    // Topographic contour lines
+    const cols = 90;
+    const rows = 56;
+    const cellW = w / cols;
+    const cellH = h / rows;
+
+    ctx.lineWidth = 1 * devicePixelRatio;
+
+    // Multiple contour bands at different elevations
+    const bands = [0.32, 0.40, 0.48, 0.55, 0.62, 0.70];
+    bands.forEach((thresh, bi) => {
+      ctx.beginPath();
+      const accent = bi % 2 === 0;
+      ctx.strokeStyle = accent
+        ? `rgba(212, 165, 116, ${0.10 + bi * 0.012})`
+        : `rgba(236, 230, 216, ${0.04 + bi * 0.008})`;
+
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const nx = x / 12 + t * 1.2;
+          const ny = y / 8 - t * 0.6;
+          const mx = (mouseX - 0.5) * 0.6;
+          const my = (mouseY - 0.5) * 0.6;
+          const v = n2(nx + mx, ny + my);
+          const v2 = n2(nx + 1, ny + my);
+          const v3 = n2(nx + mx, ny + 1);
+
+          if ((v < thresh) !== (v2 < thresh)) {
+            const px = x * cellW + cellW;
+            const py = y * cellH;
+            ctx.moveTo(px, py);
+            ctx.lineTo(px, py + cellH);
+          }
+          if ((v < thresh) !== (v3 < thresh)) {
+            const px = x * cellW;
+            const py = y * cellH + cellH;
+            ctx.moveTo(px, py);
+            ctx.lineTo(px + cellW, py);
+          }
+        }
+      }
+      ctx.stroke();
+    });
+
+    // Drifting particles
+    const pNum = 50;
+    for (let i = 0; i < pNum; i++) {
+      const px = ((Math.sin(i * 1.3 + t * 8) * 0.5 + 0.5 + (i * 0.0173)) % 1) * w;
+      const py = ((Math.cos(i * 0.7 + t * 6) * 0.5 + 0.5 + (i * 0.0211)) % 1) * h;
+      const r = (1 + (i % 3)) * devicePixelRatio;
+      const alpha = 0.18 + 0.18 * Math.sin(t * 5 + i);
+      ctx.fillStyle = i % 4 === 0
+        ? `rgba(212, 165, 116, ${alpha})`
+        : `rgba(236, 230, 216, ${alpha * 0.5})`;
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ============================================
+   CURSOR HALO
+   ============================================ */
+(function cursor() {
+  const halo = document.getElementById('cursorHalo');
+  if (!halo) return;
+  let x = window.innerWidth / 2, y = window.innerHeight / 2;
+  let tx = x, ty = y;
+  window.addEventListener('pointermove', (e) => {
+    if (!document.body.classList.contains('has-cursor')) {
+      document.body.classList.add('has-cursor');
+    }
+    tx = e.clientX; ty = e.clientY;
+  });
+  function tick() {
+    x += (tx - x) * 0.10;
+    y += (ty - y) * 0.10;
+    halo.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ============================================
+   NAV SCROLL STATE
+   ============================================ */
+(function nav() {
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 40) nav.classList.add('scrolled');
+    else nav.classList.remove('scrolled');
+  }, { passive: true });
+})();
+
+/* ============================================
+   PAGE LOAD CHOREOGRAPHY
+   ============================================ */
+window.addEventListener('load', () => {
+  requestAnimationFrame(() => {
+    document.body.classList.add('loaded');
+  });
+});
+
+/* ============================================
+   SCROLL REVEAL
+   ============================================ */
+(function reveal() {
+  const els = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  els.forEach(el => obs.observe(el));
+})();
+
+/* ============================================
+   SCENARIO CARDS — In-view + toggles
+   ============================================ */
+(function scenarios() {
+  const cards = document.querySelectorAll('.scn-card');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.classList.add('in-view');
+    });
+  }, { threshold: 0.3 });
+  cards.forEach(c => obs.observe(c));
+
+  // Animated counter for scn-figure
+  function animateCount(el) {
+    const text = el.dataset.target || '';
+    const isNeg = text.startsWith('-') || text.startsWith('−');
+    const target = parseFloat(text.replace(/[^0-9.]/g, '')) || 0;
+    const sign = isNeg ? '−' : '+';
+    let start = 0;
+    const dur = 1400;
+    const t0 = performance.now();
+    function step(now) {
+      const p = Math.min((now - t0) / dur, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const cur = (target * eased).toFixed(target % 1 ? 1 : 0);
+      el.firstChild.textContent = sign + cur;
+      // keep the % small span
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  const figObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const fig = e.target.querySelector('.scn-figure');
+        if (fig && fig.dataset.target) {
+          const small = fig.querySelector('.small');
+          // wrap textnode + keep span
+          const text = fig.dataset.target;
+          fig.innerHTML = `<span>${text.startsWith('-') || text.startsWith('−') ? '−' : '+'}0</span><span class="small">%</span>`;
+          animateCount(fig);
+        }
+        figObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.4 });
+  cards.forEach(c => figObs.observe(c));
+
+  // toggle behavior
+  const toggles = document.querySelectorAll('#scnToggles button');
+  const label = document.getElementById('scnLabel');
+  const labels = { base: 'Base', bull: 'Bull', bear: 'Bear' };
+
+  toggles.forEach(btn => {
+    btn.addEventListener('click', () => {
+      toggles.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const t = btn.dataset.target;
+      label.textContent = labels[t];
+      cards.forEach(c => c.classList.toggle('active', c.dataset.scn === t));
+      renderUnitTable(t);
+    });
+  });
+
+  // also click card itself
+  cards.forEach(c => {
+    c.addEventListener('click', () => {
+      const t = c.dataset.scn;
+      toggles.forEach(b => b.classList.toggle('active', b.dataset.target === t));
+      label.textContent = labels[t];
+      cards.forEach(cc => cc.classList.toggle('active', cc.dataset.scn === t));
+      renderUnitTable(t);
+    });
+  });
+
+  // unit table data
+  const units = [
+    { name: '성복역롯데캐슬골드타운', dong: '성복동 / 2019',  price: '15.0억', base: '14.5 ~ 15.0', bear: '12.8 ~ 13.5', jeon: '54.7%' },
+    { name: 'e편한세상 수지',          dong: '풍덕천동',       price: '14.5억', base: '14.0 ~ 14.5', bear: '12.3 ~ 13.0', jeon: '53.9%' },
+    { name: '광교자이더클래스',         dong: '상현동 / 2012',  price: '13.5억', base: '13.5 ~ 14.0', bear: '11.8 ~ 12.5', jeon: '49.7%' },
+    { name: '동천자이',                dong: '동천동 / 2018',  price: '10.2억', base: '9.8 ~ 10.5',  bear: '8.7 ~ 9.3',   jeon: '—' },
+    { name: '수지파크푸르지오',         dong: '풍덕천동 / 2019', price: '14.0억', base: '13.5 ~ 14.0', bear: '11.9 ~ 12.7', jeon: '—' }
+  ];
+  const bullAdj = (txt) => {
+    // shift up ~5% for bull (purely illustrative based on +8~+15 range vs base)
+    return txt.replace(/(\d+(\.\d+)?)/g, (m) => (parseFloat(m) * 1.08).toFixed(1));
+  };
+
+  function renderUnitTable(mode) {
+    const table = document.getElementById('unitTable');
+    if (!table) return;
+    const head = table.querySelector('.unit-row.head');
+    table.innerHTML = '';
+    table.appendChild(head);
+    units.forEach((u, idx) => {
+      const baseTxt = mode === 'bull' ? bullAdj(u.base) : u.base;
+      const bearTxt = mode === 'bull' ? '— (낙관 시 대상가 없음)' : u.bear;
+      const row = document.createElement('div');
+      row.className = 'unit-row data';
+      row.innerHTML = `
+        <div class="u-name">${u.name}<span class="u-dong">${u.dong}</span></div>
+        <div class="u-price">${u.price}</div>
+        <div class="u-price" style="color: ${mode === 'base' ? 'var(--amber)' : mode === 'bull' ? 'var(--sage)' : 'var(--rust)'};">${baseTxt}<span style="font-family: var(--mono); font-size: 11px; color: var(--paper-fade); margin-left: 6px;">억</span></div>
+        <div class="u-meta hide-m">${bearTxt}<span style="margin-left: 4px;">억</span></div>
+        <div class="u-meta hide-m">${u.jeon}</div>
+      `;
+      row.style.opacity = '0';
+      row.style.transform = 'translateY(10px)';
+      table.appendChild(row);
+      setTimeout(() => {
+        row.style.transition = 'opacity 500ms ease, transform 500ms ease';
+        row.style.opacity = '1';
+        row.style.transform = 'translateY(0)';
+      }, 60 + idx * 60);
+    });
+  }
+  renderUnitTable('base');
+})();
+
+/* ============================================
+   DONG LIST
+   ============================================ */
+(function dong() {
+  const dongs = [
+    { name: '풍덕천동', en: 'Pungdeokcheon', value: 3672, bar: 1.0,  delta: '+9.2%' },
+    { name: '동천동',   en: 'Dongcheon',     value: 3562, bar: 0.97, delta: '+8.7%' },
+    { name: '성복동',   en: 'Seongbok',      value: 3175, bar: 0.86, delta: '+7.4%' },
+    { name: '상현동',   en: 'Sanghyeon',     value: 2973, bar: 0.81, delta: '+6.1%' },
+    { name: '죽전동',   en: 'Jukjeon',       value: 2792, bar: 0.76, delta: '+5.3%' }
+  ];
+  const list = document.getElementById('dongList');
+  if (!list) return;
+  dongs.forEach((d, i) => {
+    const el = document.createElement('div');
+    el.className = 'dong-item';
+    el.style.setProperty('--bar', (d.bar * 100) + '%');
+    el.innerHTML = `
+      <div class="dong-rank">0${i + 1}</div>
+      <div class="dong-name">${d.name}<span class="ko">${d.en} · ${d.value.toLocaleString()} ₩/PY</span></div>
+      <div class="dong-price"><span class="pa">${d.value.toLocaleString()}</span><span class="delta">${d.delta}</span></div>
+      <div class="dong-bar"></div>
+    `;
+    list.appendChild(el);
+  });
+
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in-view');
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.4 });
+  list.querySelectorAll('.dong-item').forEach(el => obs.observe(el));
+})();
+
+/* ============================================
+   PRICE CHART — Canvas
+   ============================================ */
+(function chart() {
+  const canvas = document.getElementById('priceChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let w, h, dpr = devicePixelRatio || 1;
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    w = rect.width; h = rect.height;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // synthetic but story-faithful data
+  // index normalized vs 2020 = 100, climbing to 145 in 2025 (after dip in 2023)
+  const priceData = [
+    { y: '2020', idx: 100, vol: 4200 },
+    { y: '2021', idx: 122, vol: 6800 },
+    { y: '2022', idx: 132, vol: 5100 },
+    { y: '2023', idx: 118, vol: 3200 },
+    { y: '2024', idx: 124, vol: 4700 },
+    { y: '2025', idx: 145, vol: 6966 }
+  ];
+
+  let progress = 0;
+  let drawn = false;
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    const pad = { l: 50, r: 30, t: 30, b: 40 };
+    const cw = w - pad.l - pad.r;
+    const ch = h - pad.t - pad.b;
+
+    // grid
+    ctx.strokeStyle = 'rgba(236, 230, 216, 0.05)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (ch / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(pad.l + cw, y);
+      ctx.stroke();
+    }
+
+    // axis labels
+    ctx.fillStyle = 'rgba(236, 230, 216, 0.32)';
+    ctx.font = '10px "IBM Plex Mono", monospace';
+    ctx.textBaseline = 'middle';
+    ['160', '140', '120', '100', '80'].forEach((lbl, i) => {
+      ctx.fillText(lbl, 8, pad.t + (ch / 4) * i);
+    });
+
+    // x labels
+    ctx.textAlign = 'center';
+    priceData.forEach((d, i) => {
+      const x = pad.l + (cw / (priceData.length - 1)) * i;
+      ctx.fillText(d.y, x, pad.t + ch + 18);
+    });
+
+    // bars (volume) — drawn first
+    const maxVol = 8000;
+    const barW = cw / priceData.length * 0.42;
+    priceData.forEach((d, i) => {
+      const x = pad.l + (cw / (priceData.length - 1)) * i - barW / 2;
+      const ph = (d.vol / maxVol) * ch * 0.7 * progress;
+      const y = pad.t + ch - ph;
+      ctx.fillStyle = `rgba(107, 139, 158, ${0.16 + 0.10 * progress})`;
+      ctx.fillRect(x, y, barW, ph);
+      // top accent line
+      ctx.fillStyle = `rgba(107, 139, 158, ${0.5 * progress})`;
+      ctx.fillRect(x, y, barW, 1.5);
+    });
+
+    // line (price index)
+    const yFor = (v) => pad.t + ch * (1 - (v - 80) / 80);
+    const xFor = (i) => pad.l + (cw / (priceData.length - 1)) * i;
+    const visibleCount = Math.max(1, progress * priceData.length);
+    const endIdx = Math.floor(visibleCount);
+    const partial = visibleCount - endIdx;
+
+    // line shadow
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(212, 165, 116, 0.18)';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    for (let i = 0; i <= endIdx && i < priceData.length; i++) {
+      const px = xFor(i), py = yFor(priceData[i].idx);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    if (endIdx < priceData.length - 1 && partial > 0) {
+      const x0 = xFor(endIdx), y0 = yFor(priceData[endIdx].idx);
+      const x1 = xFor(endIdx + 1), y1 = yFor(priceData[endIdx + 1].idx);
+      ctx.lineTo(x0 + (x1 - x0) * partial, y0 + (y1 - y0) * partial);
+    }
+    ctx.stroke();
+
+    // line solid
+    ctx.strokeStyle = '#D4A574';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i <= endIdx && i < priceData.length; i++) {
+      const px = xFor(i), py = yFor(priceData[i].idx);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    if (endIdx < priceData.length - 1 && partial > 0) {
+      const x0 = xFor(endIdx), y0 = yFor(priceData[endIdx].idx);
+      const x1 = xFor(endIdx + 1), y1 = yFor(priceData[endIdx + 1].idx);
+      ctx.lineTo(x0 + (x1 - x0) * partial, y0 + (y1 - y0) * partial);
+    }
+    ctx.stroke();
+
+    // points + labels
+    ctx.font = '11px "IBM Plex Mono", monospace';
+    priceData.forEach((d, i) => {
+      if (i > endIdx) return;
+      const px = xFor(i), py = yFor(d.idx);
+      ctx.fillStyle = '#0B0D10';
+      ctx.beginPath();
+      ctx.arc(px, py, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#D4A574';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = i === priceData.length - 1 ? '#ECC68C' : 'rgba(236, 230, 216, 0.72)';
+      ctx.font = i === priceData.length - 1 ? '600 12px "IBM Plex Mono", monospace' : '11px "IBM Plex Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(d.idx, px, py - 12);
+    });
+
+    // 2025 highlight callout
+    if (endIdx === priceData.length - 1) {
+      const lastX = xFor(priceData.length - 1);
+      const lastY = yFor(priceData[priceData.length - 1].idx);
+      ctx.strokeStyle = 'rgba(212, 165, 116, 0.4)';
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(lastX, pad.t + ch);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = 'rgba(212, 165, 116, 0.7)';
+      ctx.font = '9px "IBM Plex Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText('+7.32% YTD', lastX - 8, pad.t + 18);
+    }
+  }
+
+  function animate() {
+    if (progress < 1) {
+      progress = Math.min(1, progress + 0.012);
+      draw();
+      requestAnimationFrame(animate);
+    } else {
+      draw();
+    }
+  }
+
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting && !drawn) {
+        drawn = true;
+        animate();
+      }
+    });
+  }, { threshold: 0.3 });
+  obs.observe(canvas);
+})();
+
+/* ============================================
+   CHECKLIST INTERACTIVITY
+   ============================================ */
+(function checklist() {
+  const items = document.querySelectorAll('.check-item');
+  const total = items.length;
+  const pct = document.getElementById('ringPct');
+  const ring = document.getElementById('ringFill');
+  const count = document.getElementById('checkCount');
+  const CIRC = 389.5; // 2*PI*62
+
+  function update() {
+    const checked = document.querySelectorAll('.check-item.checked').length;
+    const ratio = checked / total;
+    if (pct) pct.textContent = Math.round(ratio * 100);
+    if (count) count.textContent = checked.toString().padStart(2, '0');
+    if (ring) ring.style.strokeDashoffset = (CIRC * (1 - ratio)).toString();
+  }
+
+  items.forEach(item => {
+    item.addEventListener('click', () => {
+      item.classList.toggle('checked');
+      update();
+    });
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        item.classList.toggle('checked');
+        update();
+      }
+    });
+    item.setAttribute('tabindex', '0');
+  });
+
+  update();
+})();
+</script>
+
+</body>
+</html>
